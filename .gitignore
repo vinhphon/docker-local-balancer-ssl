@@ -1,4 +1,6 @@
 .DS_Store
 .DS_Store?
-rootCA/*
-!rootCA/.keep
+nginx/rootCA/*
+nginx/!rootCA/.keep
+traefik/rootCA/*
+traefik/!rootCA/.keep
