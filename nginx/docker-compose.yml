@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  #docker-gen
+  dockergen:
+    restart: unless-stopped
+    userns_mode: 'host'
+    image: nginxproxy/docker-gen
+    command: -config /autolbssl-stack/conf/docker-gen.cfg
+    environment:
+      - SEPERATE_CERTS=${SEPERATE_CERTS:-true}
+      - REVERSE_PROXY_IP=${REVERSE_PROXY_IP:-10.10.10.10}
+    volumes:
+      - generated:/autolbssl-stack/generated
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - ./conf:/autolbssl-stack/conf:ro
+  #nginx
+  nginx:
+    restart: unless-stopped
+    container_name: autolbssl-stack-nginx
+    image: 'nginx:${NGINX_VER:-alpine}'
+    networks:
+      default:
+        ipv4_address: ${REVERSE_PROXY_IP:-10.10.10.10}
+    volumes:
+      - generated:/autolbssl-stack/generated
+      - ./conf:/autolbssl-stack/conf:ro
+      - ./conf/nginx.conf:/etc/nginx/nginx.conf:ro
+  #dnsmasq
+  dnsmasq:
+    restart: always
+    container_name: autolbssl-stack-dnsmasq
+    image: vinhphon/dnsmasq:latest
+    networks:
+      default:
+        ipv4_address: ${DNSMASQ_IP:-10.10.10.53}
+    command:
+      - --addn-hosts=/autolbssl-stack/generated/hosts.conf
+    volumes:
+      - generated:/autolbssl-stack/generated
+      - ./conf/dnsmasq.conf:/etc/dnsmasq.conf:ro
+  #mkcert
+  mkcert:
+    restart: always
+    container_name: autolbssl-stack-mkcert
+    image: vinhphon/mkcert:latest
+    working_dir: /autolbssl-stack/generated/certs
+    entrypoint: "sh /docker-entrypoint"
+    volumes:
+      - generated:/autolbssl-stack/generated
+      - ./rootCA:/root/.local/share/mkcert
+      - ./conf/entrypoint-mkcert:/docker-entrypoint
+
+volumes:
+  generated:
+    name: vol.autolbssl-stack
+networks:
+  default:
+    name: net.autolbssl-stack
+    ipam:
+      driver: default
+      config:
+        - subnet: ${SUBNET:-10.10.0.0/16}

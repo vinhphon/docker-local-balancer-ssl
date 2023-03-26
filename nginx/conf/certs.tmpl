@@ -1,0 +1,15 @@
+{{ $isSeperateCerts := parseBool (coalesce $.Env.SEPERATE_CERTS "false")}}
+
+{{ $certs := dict }}
+{{ $certName := "default" }}
+{{ range $host, $containers := groupByMulti $ "Env.VIRTUAL_HOST" "," }}
+    {{ $host := trim ( replace $host "`" "" -1 ) }}
+    {{ if ( $isSeperateCerts ) }}
+        {{ $certName = or (first (groupByKeys $containers "Env.CERT_NAME")) "default" }}
+    {{ end }}
+    {{ $_ := set $certs $certName (append (or (get $certs $certName) (list)) $host) }}
+{{ end }}
+
+{{ range $certName, $host := $certs }}
+{{ $certName }}:{{ join "," $host }}
+{{ end }}

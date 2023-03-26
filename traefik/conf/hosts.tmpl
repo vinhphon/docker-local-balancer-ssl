@@ -1,0 +1,19 @@
+{{ $reserver_proxy_ip := coalesce $.Env.REVERSE_PROXY_IP "127.0.0.1"}}
+{{ $domains := list }}
+{{range $containerId, $container := whereLabelValueMatches $ "traefik.enable" "true" }}
+    {{ range $key, $value := $container.Labels}}
+        {{if $key | regexMatch "traefik.http.routers.(.*).rule"}} 
+            {{ $value := trim ( replace (trimSuffix ")" (trimPrefix "Host(" $value)) "`" "" -1 ) }}
+            {{ range $domainId, $domain := splitList "," $value }}
+                {{ $domains = append $domains $domain }}
+            {{ end }}
+        {{ end }}
+    {{end}}
+{{end}}
+{{ range $key, $item := $domains | uniq }}
+{{ $reserver_proxy_ip }} {{ $item }}
+{{ end }}
+{{ range $customHost, $containers := groupByMulti $ "Env.BYPASS_DOMAINS" "," }}
+{{ $customHost := trim (replace $customHost "`" "" -1) }}
+{{$customHost}}
+{{ end }}

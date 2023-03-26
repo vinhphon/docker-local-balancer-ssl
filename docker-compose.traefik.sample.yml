@@ -1,0 +1,16 @@
+version: '3.9'
+
+services:
+  whoami:
+    image: traefik/whoami
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.whoami.tls=true
+      - traefik.http.routers.whoami.rule=Host(`autolbssl.test`,`autolbssl2.test`)
+      # - traefik.http.services.whoami.loadbalancer.server.port=8080 (incase your containe expose different port 80)
+    networks:
+    - default
+    - net.autolbssl-stack
+networks:
+  net.autolbssl-stack:
+    external: true

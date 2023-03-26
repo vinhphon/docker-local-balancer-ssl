@@ -1,0 +1,14 @@
+version: '3.8'
+
+#PUBLISH_PORTS
+services:
+  dockergen:
+    environment:
+    - REVERSE_PROXY_IP=127.0.0.1
+  nginx:
+    ports:
+      - 443:443
+      - 80:80
+  dnsmasq:
+    ports:
+      - "127.0.0.1:53:53/udp"

@@ -1,0 +1,9 @@
+{{ $reserver_proxy_ip := coalesce $.Env.REVERSE_PROXY_IP "127.0.0.1"}}
+{{ range $host, $containers := groupByMulti $ "Env.VIRTUAL_HOST" "," }}
+{{ $host := trim (replace $host "`" "" -1) }}
+{{ $reserver_proxy_ip }} {{$host}}
+{{ end }}
+{{ range $customHost, $containers := groupByMulti $ "Env.BYPASS_DOMAINS" "," }}
+{{ $customHost := trim (replace $customHost "`" "" -1) }}
+{{$customHost}}
+{{ end }}

@@ -1,0 +1,15 @@
+version: '3.9'
+
+services:
+  web:
+    image: nginx:alpine
+    environment:
+      - VIRTUAL_HOST=autolbssl.test,autolbssl2.test
+      # - VIRTUAL_PORT=8080 (incase your containe expose different port 80)
+    networks:
+      - default
+      - net.autolbssl-stack
+    
+networks:
+  net.autolbssl-stack:
+    external: true

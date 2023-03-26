@@ -1,0 +1,22 @@
+tls:
+  stores:
+    default: {}
+{{ $isSeperateCerts := parseBool (coalesce $.Env.SEPERATE_CERTS "false")}}
+{{ $certName := "default" }}
+{{ if ( $isSeperateCerts ) }}
+  certificates:
+{{range $containerId, $container := whereLabelValueMatches $ "traefik.enable" "true" }}
+    {{ range $key, $value := $container.Labels}}
+        {{if $key | regexMatch "traefik.http.routers.(.*).rule"}} 
+            {{ $keyArray := splitList "." $key }}
+            {{ $certName = last (slice $keyArray 3 4) }}
+    - certFile: /autolbssl-stack/generated/certs/{{ $certName }}.crt
+      keyFile: /autolbssl-stack/generated/certs/{{ $certName  }}.key
+        {{ end }}
+    {{end}}
+{{end}}
+{{ else }}
+  certificates:
+    - certFile: /autolbssl-stack/generated/certs/default.crt
+      keyFile: /autolbssl-stack/generated/certs/default.key
+{{ end }}

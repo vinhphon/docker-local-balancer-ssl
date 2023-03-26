@@ -1,0 +1,30 @@
+#!/bin/sh
+
+# Function to run mkcert
+run_mkcert() {
+    if [ ! -e "/root/.local/share/mkcert/rootCA.pem" ]; then
+        mkcert -install
+    fi
+    file="/autolbssl-stack/generated/certs.txt";
+
+    if [ -f $file ]; then
+        while read line; do
+            file=${line%:*}
+            domains=${line#*:}
+            domains_parse=$(echo $domains | sed "s/,/ /g")
+            mkcert -cert-file ${file}.crt -key-file ${file}.key ${domains_parse}
+        done < $file
+    fi
+}
+
+# Trap SIGHUP signal and run mkcert again
+trap 'run_mkcert' SIGHUP
+
+# Run mkcert initially
+run_mkcert
+
+trap "break;exit" SIGINT SIGTERM
+# Keep the container running
+while true; do
+  sleep infinity & wait
+done

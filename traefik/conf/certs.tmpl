@@ -1,0 +1,21 @@
+{{ $isSeperateCerts := parseBool (coalesce $.Env.SEPERATE_CERTS "false")}}
+{{ $certs := dict }}
+{{ $certName := "default" }}
+{{range $containerId, $container := whereLabelValueMatches $ "traefik.enable" "true" }}
+    {{ range $key, $value := $container.Labels}}
+        {{if $key | regexMatch "traefik.http.routers.(.*).rule"}} 
+            {{ if ( $isSeperateCerts ) }}
+                {{ $keyArray := splitList "." $key }}
+                {{ $certName = last (slice $keyArray 3 4) }}
+            {{ end }} 
+            
+            {{ $value := trim ( replace (trimSuffix ")" (trimPrefix "Host(" $value)) "`" "" -1 ) }}
+            {{ range $domainId, $domain := splitList "," $value }}
+                {{ $_ := set $certs $certName (append (or (get $certs $certName) (list)) $domain) }}
+            {{ end }}
+        {{ end }}
+    {{end}}
+{{end}}
+{{ range $certName, $host := $certs }}
+{{ $certName }}:{{ join "," ($host | uniq) }}
+{{ end }}
